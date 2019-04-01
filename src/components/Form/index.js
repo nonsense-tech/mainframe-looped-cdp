@@ -30,6 +30,8 @@ class CustomForm extends Component {
       },
       changeEthValue,
       changePercentValue,
+      initialEthValue,
+      initialPercent,
     } = this.props;
     return (
       <div className="form-container">
@@ -40,7 +42,7 @@ class CustomForm extends Component {
                 rules: [{
                   validator: this.validateEthValue,
                 }],
-                initialValue: 0.1,
+                initialValue: initialEthValue,
               })(
                 <InputNumber
                   formatter={value => `⧫ ${value}`}
@@ -60,7 +62,7 @@ class CustomForm extends Component {
                 rules: [{
                   validator: this.validatePercent,
                 }],
-                initialValue: 50,
+                initialValue: initialPercent,
               })(
                 <InputNumber
                   formatter={value => `${value} %`}

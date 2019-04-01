@@ -31,9 +31,11 @@ export default class extends Component {
     account: '',
     ethBalance: 0,
     ethPrice: 0,
-    ethValue: 0.1,
-    maxEthValue: 0.1,
-    percent: 50,
+    initialEthValue: 0.1,
+    ethValue: 0,
+    maxEthValue: 0,
+    initialPercent: 50,
+    percent: 0,
     maxPercent: 60,
     collateral: 0,
     debt: 0,
@@ -49,6 +51,9 @@ export default class extends Component {
     this.sdk = new MainframeSDK();
     this.web3 = new Web3(this.sdk.ethereum.web3Provider);
     this.formRef = React.createRef();
+
+    this.state.ethValue = this.state.initialEthValue;
+    this.state.percent = this.state.initialPercent;
   }
 
   fromWei(value) {
@@ -205,6 +210,8 @@ export default class extends Component {
       returnValue,
       collateralizationRate,
       maxEthValue,
+      initialEthValue,
+      initialPercent,
     } = this.state;
     const percent = this.state.percent;
 
@@ -241,6 +248,8 @@ export default class extends Component {
               wrappedComponentRef={this.formRef}
               changeEthValue={this.changeValue('ethValue')}
               changePercentValue={this.changeValue('percent')}
+              initialEthValue={initialEthValue}
+              initialPercent={initialPercent}
               maxEthValue={maxEthValue}
             />
             <ListOfValues
