@@ -192,7 +192,6 @@ export default class extends Component {
   leverage = async () => {
     const { collateral, debt, leverageContract, account } = this.state;
     try {
-      this.validate();
       this.sendingStart();
       const ethValue = this.state.ethValue;
       await leverageContract.methods.riskNewCDP(
@@ -205,17 +204,6 @@ export default class extends Component {
     } catch (error) {
       this.sendingEnd();
       message.error(error.message);
-    }
-  }
-
-  validate() {
-    const ethValue = this.state.ethValue;
-    const percentValue = this.state.percentValue;
-    if (ethValue > 0.1 || ethValue < 0.01 || percentValue > 60 || percentValue < 10) {
-      throw Error('Wrong value.\nETH must be between 0.01 and 0.1.\nRatio must be between 10% and 60%');
-    }
-    if (this.state.ethBalance < ethValue) {
-      throw Error('You have no enough ETH');
     }
   }
 
