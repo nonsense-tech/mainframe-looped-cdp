@@ -1,0 +1,26 @@
+.card-container {
+  padding: 30px 30px;
+  margin: 30px auto;
+  background-color: white;
+  box-shadow: 0px 0px 15px rgb(230, 230, 230);
+  width: 400px;
+  min-height: 520px;
+
+  .title {
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  .button {
+    margin-top: 10px;
+  }
+
+  .alert {
+    margin-top: 10px;
+    font-size: 10px;
+  }
+
+  .tag {
+    margin-right: 0;
+  }
+}
