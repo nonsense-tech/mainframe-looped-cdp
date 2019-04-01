@@ -16,7 +16,7 @@ class CustomForm extends Component {
       callback(`The Looper has a limit of ${maxEthValue} ETH per transaction.`);
     }
   }
-  validatePercent = (rule, value, callback) => {
+  validatePercentValue = (rule, value, callback) => {
     if (value && value >= 10 && value <= 60) {
       callback();
     } else {
@@ -31,7 +31,7 @@ class CustomForm extends Component {
       changeEthValue,
       changePercentValue,
       initialEthValue,
-      initialPercent,
+      initialPercentValue,
     } = this.props;
     return (
       <div className="form-container">
@@ -60,9 +60,9 @@ class CustomForm extends Component {
             <Form.Item label="Rehypothecation rate">
               {getFieldDecorator('percentValue', {
                 rules: [{
-                  validator: this.validatePercent,
+                  validator: this.validatePercentValue,
                 }],
-                initialValue: initialPercent,
+                initialValue: initialPercentValue,
               })(
                 <InputNumber
                   formatter={value => `${value} %`}

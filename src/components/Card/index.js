@@ -34,9 +34,9 @@ export default class extends Component {
     initialEthValue: 0.1,
     ethValue: 0,
     maxEthValue: 0,
-    initialPercent: 50,
-    percent: 0,
-    maxPercent: 60,
+    initialPercentValue: 50,
+    percentValue: 0,
+    maxPercentValue: 60,
     collateral: 0,
     debt: 0,
     liquidationPrice: 0,
@@ -53,7 +53,7 @@ export default class extends Component {
     this.formRef = React.createRef();
 
     this.state.ethValue = this.state.initialEthValue;
-    this.state.percent = this.state.initialPercent;
+    this.state.percentValue = this.state.initialPercentValue;
   }
 
   fromWei(value) {
@@ -102,7 +102,7 @@ export default class extends Component {
       .call();
 
     const contractEthBalance =  this.fromWei(await this.web3.eth.getBalance(leverageAddress));
-    const ratio = this.state.maxPercent / 100;
+    const ratio = this.state.maxPercentValue / 100;
     const maxEthValue = Number(((contractEthBalance * 0.9) / (ratio + ratio**2 + ratio**3)).toFixed(2));
 
 
@@ -128,10 +128,10 @@ export default class extends Component {
 
   calculateValues() {
     const { ethPrice } = this.state;
-    const percent = this.state.percent;
+    const percentValue = this.state.percentValue;
     const ethValue = this.state.ethValue;
 
-    const ratio = percent / 100;
+    const ratio = percentValue / 100;
     let currentValue = ethValue;
     let collateral = currentValue;
     for (let i = 0; i < 3; i++) {
@@ -146,7 +146,7 @@ export default class extends Component {
     }
     debt *= ethValue;
     const returnValue = debt - ((collateral - ethValue) * ethPrice);
-    const collateralizationRate = Math.round(100 / (percent / 100));
+    const collateralizationRate = Math.round(100 / (percentValue / 100));
     const liquidationPrice = ((debt / collateral / 2) * 3) || 0;
     this.setState({
       collateral,
@@ -192,8 +192,8 @@ export default class extends Component {
 
   validate() {
     const ethValue = this.state.ethValue;
-    const percent = this.state.percent;
-    if (ethValue > 0.1 || ethValue < 0.01 || percent > 60 || percent < 10) {
+    const percentValue = this.state.percentValue;
+    if (ethValue > 0.1 || ethValue < 0.01 || percentValue > 60 || percentValue < 10) {
       throw Error('Wrong value.\nETH must be between 0.01 and 0.1.\nRatio must be between 10% and 60%');
     }
     if (this.state.ethBalance < ethValue) {
@@ -211,11 +211,11 @@ export default class extends Component {
       collateralizationRate,
       maxEthValue,
       initialEthValue,
-      initialPercent,
+      initialPercentValue,
     } = this.state;
-    const percent = this.state.percent;
+    const percentValue = this.state.percentValue;
 
-    const isDanger = percent > 50;
+    const isDanger = percentValue > 50;
     const labelColor = isDanger ? 'red' : 'green';
     const labelText = isDanger ? 'danger' : 'safe';
 
@@ -247,9 +247,9 @@ export default class extends Component {
             <Form
               wrappedComponentRef={this.formRef}
               changeEthValue={this.changeValue('ethValue')}
-              changePercentValue={this.changeValue('percent')}
+              changePercentValue={this.changeValue('percentValue')}
               initialEthValue={initialEthValue}
-              initialPercent={initialPercent}
+              initialPercentValue={initialPercentValue}
               maxEthValue={maxEthValue}
             />
             <ListOfValues
