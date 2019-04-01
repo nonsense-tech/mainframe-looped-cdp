@@ -9,17 +9,18 @@ import './index.scss';
 
 class CustomForm extends Component {
   validateEthValue = (rule, value, callback) => {
-    if (value && value >= 0.01 && value <= 0.1) {
+    const { maxEthValue } = this.props;
+    if (value && value <= maxEthValue) {
       callback();
     } else {
-      callback('The Looper has a limit of 0.1 ETH per transaction.');
+      callback(`The Looper has a limit of ${maxEthValue} ETH per transaction.`);
     }
   }
   validatePercent = (rule, value, callback) => {
     if (value && value >= 10 && value <= 60) {
       callback();
     } else {
-      callback('Rate must be between 10 and 60');
+      callback('Rate must be between 10% and 60%');
     }
   }
   render() {
@@ -47,6 +48,7 @@ class CustomForm extends Component {
                   onChange={changeEthValue}
                   className="input"
                   size="large"
+                  step={0.01}
                 />
               )}
             </Form.Item>
@@ -66,6 +68,7 @@ class CustomForm extends Component {
                   onChange={changePercentValue}
                   className="input"
                   size="large"
+                  step={10}
                 />
               )}
             </Form.Item>

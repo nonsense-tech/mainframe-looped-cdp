@@ -32,7 +32,9 @@ export default class extends Component {
     ethBalance: 0,
     ethPrice: 0,
     ethValue: 0.1,
+    maxEthValue: 0.1,
     percent: 50,
+    maxPercent: 60,
     collateral: 0,
     debt: 0,
     liquidationPrice: 0,
@@ -94,9 +96,15 @@ export default class extends Component {
       .getTokenToEthOutputPrice(this.toWei(1))
       .call();
 
+    const contractEthBalance =  this.fromWei(await this.web3.eth.getBalance(leverageAddress));
+    const ratio = this.state.maxPercent / 100;
+    const maxEthValue = Number(((contractEthBalance * 0.9) / (ratio + ratio**2 + ratio**3)).toFixed(2));
+
+
     this.setState({
       ethPrice: Number(this.fromWei(ethPrice)),
       leverageContract,
+      maxEthValue,
     });
   }
 
@@ -196,6 +204,7 @@ export default class extends Component {
       liquidationPrice,
       returnValue,
       collateralizationRate,
+      maxEthValue,
     } = this.state;
     const percent = this.state.percent;
 
@@ -230,9 +239,9 @@ export default class extends Component {
             </Col>
             <Form
               wrappedComponentRef={this.formRef}
-              // ref={this.formRef}
               changeEthValue={this.changeValue('ethValue')}
               changePercentValue={this.changeValue('percent')}
+              maxEthValue={maxEthValue}
             />
             <ListOfValues
               data={[
