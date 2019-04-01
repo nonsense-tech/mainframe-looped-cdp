@@ -302,7 +302,7 @@ export default class extends Component {
                 },
                 {
                   text: 'Expected Collateralization Rate',
-                  value: `${collateralizationRate}%`,
+                  value: collateralizationRate + (collateralizationRate !== Infinity && '%'),
                 },
                 {
                   text: 'Expected Status',
