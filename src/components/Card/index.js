@@ -36,6 +36,7 @@ export default class extends Component {
     maxEthValue: 0,
     initialPercentValue: 50,
     percentValue: 0,
+    minPercentValue: 10,
     maxPercentValue: 60,
     collateral: 0,
     debt: 0,
@@ -73,7 +74,7 @@ export default class extends Component {
         this.fetchState();
       })
       await this.initContracts();
-      this.calculateValues();
+      await this.initValues();
       this.setState({ initialized: true });
     }
     this.fetchState();
@@ -101,15 +102,9 @@ export default class extends Component {
       .getTokenToEthOutputPrice(this.toWei(1))
       .call();
 
-    const contractEthBalance =  this.fromWei(await this.web3.eth.getBalance(leverageAddress));
-    const ratio = this.state.maxPercentValue / 100;
-    const maxEthValue = Number(((contractEthBalance * 0.9) / (ratio + ratio**2 + ratio**3)).toFixed(2));
-
-
     this.setState({
       ethPrice: Number(this.fromWei(ethPrice)),
       leverageContract,
-      maxEthValue,
     });
   }
 
@@ -126,10 +121,32 @@ export default class extends Component {
     }
   }
 
+  async initValues() {
+    const { leverageAddress } = addresses;
+
+    const contractEthBalance =  this.fromWei(await this.web3.eth.getBalance(leverageAddress));
+    const ratio = this.state.maxPercentValue / 100;
+    const maxEthValue = Number(((contractEthBalance * 0.9) / (ratio + ratio**2 + ratio**3)).toFixed(2));
+
+    let initialEthValue = this.state.initialEthValue;
+    if (initialEthValue > maxEthValue) {
+      initialEthValue = maxEthValue;
+    }
+    const ethValue = initialEthValue;
+    const percentValue = this.state.initialPercentValue;
+
+    await this.setState({
+      initialEthValue,
+      ethValue,
+      maxEthValue,
+      percentValue,
+    });
+
+    this.calculateValues();
+  }
+
   calculateValues() {
-    const { ethPrice } = this.state;
-    const percentValue = this.state.percentValue;
-    const ethValue = this.state.ethValue;
+    const { ethPrice, percentValue, ethValue } = this.state;
 
     const ratio = percentValue / 100;
     let currentValue = ethValue;
@@ -138,6 +155,7 @@ export default class extends Component {
       currentValue *= ratio;
       collateral += currentValue;
     }
+    
     let debt = 0;
     currentValue = ethPrice;
     for (let i = 0; i < 4; i++) {
@@ -209,9 +227,11 @@ export default class extends Component {
       liquidationPrice,
       returnValue,
       collateralizationRate,
-      maxEthValue,
       initialEthValue,
+      maxEthValue,
       initialPercentValue,
+      minPercentValue,
+      maxPercentValue,
     } = this.state;
     const percentValue = this.state.percentValue;
 
@@ -248,9 +268,15 @@ export default class extends Component {
               wrappedComponentRef={this.formRef}
               changeEthValue={this.changeValue('ethValue')}
               changePercentValue={this.changeValue('percentValue')}
-              initialEthValue={initialEthValue}
-              initialPercentValue={initialPercentValue}
-              maxEthValue={maxEthValue}
+              ethValue={{
+                initial: initialEthValue,
+                max: maxEthValue,
+              }}
+              percentValue={{
+                initial: initialPercentValue,
+                min: minPercentValue,
+                max: maxPercentValue,
+              }}
             />
             <ListOfValues
               data={[

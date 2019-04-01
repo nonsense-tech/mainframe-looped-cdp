@@ -9,7 +9,7 @@ import './index.scss';
 
 class CustomForm extends Component {
   validateEthValue = (rule, value, callback) => {
-    const { maxEthValue } = this.props;
+    const { max: maxEthValue } = this.props.ethValue;
     if (value && value <= maxEthValue) {
       callback();
     } else {
@@ -17,10 +17,14 @@ class CustomForm extends Component {
     }
   }
   validatePercentValue = (rule, value, callback) => {
-    if (value && value >= 10 && value <= 60) {
+    const { 
+      min: minPercentValue,
+      max: maxPercentValue,
+    } = this.props.percentValue;
+    if (value && value >= minPercentValue && value <= maxPercentValue) {
       callback();
     } else {
-      callback('Rate must be between 10% and 60%');
+      callback(`Rate must be between ${minPercentValue}% and ${maxPercentValue}%`);
     }
   }
   render() {
@@ -28,10 +32,14 @@ class CustomForm extends Component {
       form: {
         getFieldDecorator,
       },
+      ethValue: {
+        initial: initialEthValue,
+      },
+      percentValue: {
+        initial: initialPercentValue,
+      },
       changeEthValue,
       changePercentValue,
-      initialEthValue,
-      initialPercentValue,
     } = this.props;
     return (
       <div className="form-container">
