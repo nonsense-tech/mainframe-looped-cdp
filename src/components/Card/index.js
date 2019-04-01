@@ -144,15 +144,9 @@ export default class extends Component {
     });
   }
 
-  changeEthValue = async value => {
+  changeValue = name => async value => {
     if (typeof value !== 'number') return;
-    await this.setState({ ethValue: Number(value) });
-    this.calculateValues();
-  }
-
-  changePercentValue = async value => {
-    if (typeof value !== 'number') return;
-    await this.setState({ percent: Number(value) });
+    await this.setState({ [name]: Number(value) });
     this.calculateValues();
   }
 
@@ -237,8 +231,8 @@ export default class extends Component {
             <Form
               wrappedComponentRef={this.formRef}
               // ref={this.formRef}
-              changeEthValue={this.changeEthValue}
-              changePercentValue={this.changePercentValue}
+              changeEthValue={this.changeValue('ethValue')}
+              changePercentValue={this.changeValue('percent')}
             />
             <ListOfValues
               data={[
