@@ -146,24 +146,33 @@ export default class extends Component {
   calculateValues() {
     const { ethPrice, percentValue, ethValue } = this.state;
 
-    const ratio = percentValue / 100;
-    let currentValue = ethValue;
-    let collateral = currentValue;
-    for (let i = 0; i < 3; i++) {
-      currentValue *= ratio;
-      collateral += currentValue;
+    let collateral = 0;
+    let debt = 0;
+    let liquidationPrice = 0;
+    let returnValue = 0;
+    let collateralizationRate = Infinity;
+
+    if (percentValue > 0 && ethValue > 0) {
+      const ratio = percentValue / 100;
+      let currentValue = ethValue;
+      collateral = currentValue;
+      for (let i = 0; i < 3; i++) {
+        currentValue *= ratio;
+        collateral += currentValue;
+      }
+      
+      currentValue = ethPrice;
+      for (let i = 0; i < 4; i++) {
+        currentValue *= ratio;
+        debt += currentValue;
+      }
+      debt *= ethValue;
+
+      returnValue = debt - ((collateral - ethValue) * ethPrice);
+      collateralizationRate = Math.round(100 / (percentValue / 100));
+      liquidationPrice = ((debt / collateral / 2) * 3) || 0;
     }
     
-    let debt = 0;
-    currentValue = ethPrice;
-    for (let i = 0; i < 4; i++) {
-      currentValue *= ratio;
-      debt += currentValue;
-    }
-    debt *= ethValue;
-    const returnValue = debt - ((collateral - ethValue) * ethPrice);
-    const collateralizationRate = Math.round(100 / (percentValue / 100));
-    const liquidationPrice = ((debt / collateral / 2) * 3) || 0;
     this.setState({
       collateral,
       debt,

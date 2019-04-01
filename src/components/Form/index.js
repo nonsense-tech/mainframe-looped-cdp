@@ -64,6 +64,7 @@ class CustomForm extends Component {
                   className="input"
                   size="large"
                   step={0.01}
+                  min={0}
                 />
               )}
             </Form.Item>
@@ -83,7 +84,9 @@ class CustomForm extends Component {
                   onChange={changePercentValue}
                   className="input"
                   size="large"
-                  step={10}
+                  step={5}
+                  min={0}
+                  max={100}
                 />
               )}
             </Form.Item>
