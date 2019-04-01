@@ -52,9 +52,6 @@ export default class extends Component {
     this.sdk = new MainframeSDK();
     this.web3 = new Web3(this.sdk.ethereum.web3Provider);
     this.formRef = React.createRef();
-
-    this.state.ethValue = this.state.initialEthValue;
-    this.state.percentValue = this.state.initialPercentValue;
   }
 
   fromWei(value) {
@@ -190,10 +187,15 @@ export default class extends Component {
   }
 
   leverage = async () => {
-    const { collateral, debt, leverageContract, account } = this.state;
+    const {
+      collateral,
+      debt,
+      leverageContract,
+      account,
+      ethValue,
+    } = this.state;
     try {
       this.sendingStart();
-      const ethValue = this.state.ethValue;
       await leverageContract.methods.riskNewCDP(
         this.toWei(collateral),
         this.toWei(debt),
