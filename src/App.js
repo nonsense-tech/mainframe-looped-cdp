@@ -14,7 +14,10 @@ import {
   Tag,
   message,
   Skeleton,
+  Alert,
 } from 'antd';
+
+import loopImage from './images/loop.svg';
 
 import factoryABI from './contracts/Factory.json';
 import exchangeABI from './contracts/Exchange.json';
@@ -26,32 +29,109 @@ import './App.scss';
 const { Text } = Typography;
 const { Header, Footer, Content } = Layout;
 
+const ListOfValues = ({ data }) =>
+  data.map((item, index) => (
+    <Row key={index}>
+      {index > 0 && <Divider className="divider" />}
+      <Row type="flex" justify="space-between">
+        <Text>{item.text}</Text>
+        <Text>{item.value}</Text>
+      </Row>
+    </Row>
+  ));
 
-const ValueRow = ({ label, value }) => (
-  <Row type="flex" justify="space-between">
-    <Text>{label}</Text>
-    <Text>{value}</Text>
-  </Row>
-);
+class CustomForm extends Component {
+  validateEthValue = (rule, value, callback) => {
+    if (value && value >= 0.01 && value <= 0.1) {
+      callback();
+    } else {
+      callback('The Looper has a limit of 0.1 ETH per transaction.');
+    }
+  }
+  validatePercent = (rule, value, callback) => {
+    if (value && value >= 10 && value <= 60) {
+      callback();
+    } else {
+      callback('Rate must be between 10 and 60');
+    }
+  }
+  render() {
+    const {
+      form: {
+        getFieldDecorator,
+      },
+      changeEthValue,
+      changePercentValue,
+    } = this.props;
+    return (
+      <div className="form-container">
+        <Form>
+          <Col span={11}>
+            <Form.Item label="ETH to lock">
+              {getFieldDecorator('ethValue', {
+                rules: [{
+                  validator: this.validateEthValue,
+                }],
+                initialValue: 0.1,
+              })(
+                <InputNumber
+                  formatter={value => `⧫ ${value}`}
+                  parser={value => value.replace('⧫', '')} 
+                  onChange={changeEthValue}
+                  className="input"
+                  size="large"
+                />
+              )}
+            </Form.Item>
+          </Col>
+          <Col span={2} />
+          <Col span={11}>
+            <Form.Item label="Rehypothecation rate">
+              {getFieldDecorator('percentValue', {
+                rules: [{
+                  validator: this.validatePercent,
+                }],
+                initialValue: 50,
+              })(
+                <InputNumber
+                  formatter={value => `${value} %`}
+                  parser={value => value.replace('%', '')}
+                  onChange={changePercentValue}
+                  className="input"
+                  size="large"
+                />
+              )}
+            </Form.Item>
+          </Col>
+        </Form>
+      </div>
+    );
+  }
+}
+
+const WrappedForm = Form.create({ name: 'register' })(CustomForm);
 export default class App extends Component {
   state = {
     initialized: false,
     account: '',
     ethBalance: 0,
     ethPrice: 0,
-    ethValue: null,
-    percent: null,
+    ethValue: 0.1,
+    percent: 50,
     collateral: 0,
     debt: 0,
     liquidationPrice: 0,
     leverageContract: null,
     sending: false,
+    returnValue: 0,
+    collateralizationRate: 0,
   }
 
   constructor() {
     super();
     this.sdk = new MainframeSDK();
     this.web3 = new Web3(this.sdk.ethereum.web3Provider);
+    this.formRef = React.createRef();
   }
 
   fromWei(value) {
@@ -120,8 +200,10 @@ export default class App extends Component {
 
   calculateValues() {
     const { ethPrice } = this.state;
-    const percent = this.getPercent();
-    const ethValue = this.getEthValue();
+    const percent = this.state.percent;
+    const ethValue = this.state.ethValue;
+    console.log(ethValue);
+    
     const ratio = percent / 100;
     let currentValue = ethValue;
     let collateral = currentValue;
@@ -136,18 +218,26 @@ export default class App extends Component {
       debt += currentValue;
     }
     debt *= ethValue;
-    const liquidationPrice = (debt / collateral / 2) * 3;
-    this.setState({ collateral, debt, liquidationPrice });
+    const returnValue = debt - ((collateral - ethValue) * ethPrice);
+    const collateralizationRate = Math.round(100 / (percent / 100));
+    const liquidationPrice = ((debt / collateral / 2) * 3) || 0;
+    this.setState({
+      collateral,
+      debt,
+      liquidationPrice,
+      returnValue,
+      collateralizationRate,
+    });
   }
 
   changeEthValue = async value => {
-    if (!Number(value)) return;
+    if (typeof value !== 'number') return;
     await this.setState({ ethValue: Number(value) });
     this.calculateValues();
   }
 
   changePercentValue = async value => {
-    if (!Number(value)) return;
+    if (typeof value !== 'number') return;
     await this.setState({ percent: Number(value) });
     this.calculateValues();
   }
@@ -165,7 +255,7 @@ export default class App extends Component {
     try {
       this.validate();
       this.sendingStart();
-      const ethValue = this.getEthValue();
+      const ethValue = this.state.ethValue;
       await leverageContract.methods.riskNewCDP(
         this.toWei(collateral),
         this.toWei(debt),
@@ -180,8 +270,8 @@ export default class App extends Component {
   }
 
   validate() {
-    const ethValue = this.getEthValue();
-    const percent = this.getPercent();
+    const ethValue = this.state.ethValue;
+    const percent = this.state.percent;
     if (ethValue > 0.1 || ethValue < 0.01 || percent > 60 || percent < 10) {
       throw Error('Wrong value.\nETH must be between 0.01 and 0.1.\nRatio must be between 10% and 60%');
     }
@@ -199,16 +289,34 @@ export default class App extends Component {
   }
 
   render() {
-    const { ethPrice, collateral, debt, liquidationPrice } = this.state;
-    const percent = this.getPercent();
-    const ethValue = this.getEthValue();
+    const {
+      ethPrice,
+      collateral,
+      debt,
+      liquidationPrice,
+      returnValue,
+      collateralizationRate,
+    } = this.state;
+    const percent = this.state.percent;
+    // const ethValue = this.getEthValue();
     const isDanger = percent > 50;
-    const disabled = !(ethValue && percent);
+    const labelColor = isDanger ? 'red' : 'green';
+    const labelText = isDanger ? 'danger' : 'safe';
+    const label = isDanger ? <Tag color="red">danger</Tag> : <Tag color="green">safe</Tag>;
+    // const disabled = !(ethValue && percent);
+    let disabled = false;
+
+    if (this.formRef.current) {
+      const errors = this.formRef.current.getFieldsError(['ethValue', 'percentValue']);
+      disabled = errors.ethValue || errors.percentValue;
+    }
+
     return (
-      <Layout style={{ height: '100vh', minHeight: 700 }}>
+      <Layout className="page-layout">
         <Header>
-          <Row>
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Looped CDP</Text>
+          <Row type="flex" className="header-row">
+            <img src={loopImage} alt="" className="logo" />
+            <Text className="logo-text">The Looper</Text>
           </Row>
         </Header>
         <Content>
@@ -224,75 +332,67 @@ export default class App extends Component {
                   </div>
                 ) : (
                   <div>
-                    <Row type="flex" justify="center" align="center">
-                      <Text style={{ fontWeight: 'bold', fontSize: 20 }}>3x Loop</Text>
-                    </Row>
-                    <Divider />
-                    <Row style={{ marginBottom: -20 }}>
-                      <Form
-                        labelCol={{ 'sm': 12 }}
-                        wrapperCol={{ 'sm': 12 }}
-                        layout="horizontal"
-                      >
-                        <Col span={12}>
-                          <Form.Item label="ETH to lock">
-                            <InputNumber
-                              defaultValue={0.1}
-                              min={0.01}
-                              max={0.1}
-                              formatter={value => `⧫ ${value}`}
-                              parser={value => value.replace('⧫', '')}
-                              onChange={this.changeEthValue}
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="with ratio">
-                            <InputNumber
-                              defaultValue={50}
-                              min={10}
-                              max={60}
-                              formatter={value => `${value}%`}
-                              parser={value => value.replace('%', '')}
-                              onChange={this.changePercentValue}
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Form>
-                    </Row>
-                    <Divider style={{ margin: '15px 0' }} />
-                    <ValueRow
-                      label="Current ETH price"
-                      value={`$${ethPrice.toFixed(2)}`}
+                    <Col align="center">
+                      <Text className="title">
+                        Leveraged Collateralized
+                      </Text>
+                      <br />
+                      <Text className="title">
+                        Debt Position
+                      </Text>
+                    </Col>
+                    {/* <Divider /> */}
+                    <WrappedForm
+                      ref={this.formRef}
+                      changeEthValue={this.changeEthValue}
+                      changePercentValue={this.changePercentValue}
                     />
-                    <Divider style={{ margin: '15px 0' }} />
-                    <ValueRow
-                      label="Expected Collateral (ETH)"
-                      value={collateral.toFixed(3)}
+                    <ListOfValues
+                      data={[
+                        {
+                          text: 'Current ETH price',
+                          value: `$${ethPrice.toFixed(2)}`,
+                        },
+                        {
+                          text: 'Expected Collateral (ETH)',
+                          value: collateral.toFixed(3),
+                        },
+                        {
+                          text: 'Expected Debt (DAI)',
+                          value: debt.toFixed(2),
+                        },
+                        {
+                          text: 'Expected Change (DAI)',
+                          value: returnValue.toFixed(2),
+                        },
+                        {
+                          text: 'Expected Liquidation Price',
+                          value: `$${liquidationPrice.toFixed(2)}`,
+                        },
+                        {
+                          text: 'Expected Collateralization Rate',
+                          value: `${collateralizationRate}%`,
+                        },
+                        {
+                          text: 'Expected Status',
+                          value: <Tag color={labelColor} className="tag">{labelText}</Tag>,
+                        },
+                      ]}
                     />
-                    <Divider style={{ margin: '15px 0' }} />
-                    <ValueRow
-                      label="Expected Debt (DAI)"
-                      value={`$${debt.toFixed(2)}`}
+                    <Alert
+                      message="The final values may slightly differ from this calculator due to exchange rate volatility and slippage."
+                      type="info"
+                      showIcon
+                      className="alert"
                     />
-                    <Divider style={{ margin: '15px 0' }} />
-                    <ValueRow
-                      label="Expected Liquidation Price"
-                      value={`$${liquidationPrice.toFixed(2)}`}
-                    />
-                    <Divider style={{ margin: '15px 0' }} />
-                    <Row type="flex" justify="space-between">
-                      <Text>Expected Status</Text>
-                      {isDanger ? <Tag color="red">danger</Tag> : <Tag color="green">safe</Tag>}
-                    </Row>
                     <Button
+                      className="button"
                       type="primary"
                       disabled={disabled}
                       onClick={this.leverage}
                       block
-                      style={{ marginTop: 40 }}
                       loading={this.state.sending}
-                    >Process</Button>
+                    >Loop it!</Button>
                   </div>
                 )}
               </Col>
