@@ -33,6 +33,7 @@ export default class extends Component {
     ethPrice: 0,
     initialEthValue: 0.1,
     ethValue: 0,
+    minEthValue: 0.01,
     maxEthValue: 0,
     initialPercentValue: 50,
     percentValue: 0,
@@ -218,6 +219,7 @@ export default class extends Component {
       returnValue,
       collateralizationRate,
       initialEthValue,
+      minEthValue,
       maxEthValue,
       initialPercentValue,
       minPercentValue,
@@ -260,6 +262,7 @@ export default class extends Component {
               changePercentValue={this.changeValue('percentValue')}
               ethValue={{
                 initial: initialEthValue,
+                min: minEthValue,
                 max: maxEthValue,
               }}
               percentValue={{

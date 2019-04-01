@@ -9,11 +9,16 @@ import './index.scss';
 
 class CustomForm extends Component {
   validateEthValue = (rule, value, callback) => {
-    const { max: maxEthValue } = this.props.ethValue;
-    if (value && value <= maxEthValue) {
+    const {
+      min: minEthValue,
+      max: maxEthValue,
+    } = this.props.ethValue;
+    if (value && value >= minEthValue && value <= maxEthValue) {
       callback();
-    } else {
+    } else if (value && value > maxEthValue) {
       callback(`The Looper has a limit of ${maxEthValue} ETH per transaction.`);
+    } else {
+      callback(`The minimum required value is ${minEthValue} ETH`);
     }
   }
   validatePercentValue = (rule, value, callback) => {
