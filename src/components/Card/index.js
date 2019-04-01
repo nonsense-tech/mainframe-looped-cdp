@@ -45,7 +45,7 @@ export default class extends Component {
     leverageContract: null,
     sending: false,
     returnValue: 0,
-    collateralizationRate: 0,
+    collateralizationRatio: 0,
   }
 
   constructor() {
@@ -150,7 +150,7 @@ export default class extends Component {
     let debt = 0;
     let liquidationPrice = 0;
     let returnValue = 0;
-    let collateralizationRate = Infinity;
+    let collateralizationRatio = Infinity;
 
     if (percentValue > 0 && ethValue > 0) {
       const ratio = percentValue / 100;
@@ -169,7 +169,7 @@ export default class extends Component {
       debt *= ethValue;
 
       returnValue = debt - ((collateral - ethValue) * ethPrice);
-      collateralizationRate = Math.round(100 / (percentValue / 100));
+      collateralizationRatio = Math.round(100 / (percentValue / 100));
       liquidationPrice = ((debt / collateral / 2) * 3) || 0;
     }
     
@@ -178,7 +178,7 @@ export default class extends Component {
       debt,
       liquidationPrice,
       returnValue,
-      collateralizationRate,
+      collateralizationRatio,
     });
   }
 
@@ -226,7 +226,7 @@ export default class extends Component {
       debt,
       liquidationPrice,
       returnValue,
-      collateralizationRate,
+      collateralizationRatio,
       initialEthValue,
       minEthValue,
       maxEthValue,
@@ -303,8 +303,8 @@ export default class extends Component {
                   value: `$${liquidationPrice.toFixed(2)}`,
                 },
                 {
-                  text: 'Expected Collateralization Rate',
-                  value: collateralizationRate + (collateralizationRate !== Infinity && '%'),
+                  text: 'Expected Collateralization Ratio',
+                  value: collateralizationRatio + (collateralizationRatio !== Infinity && '%'),
                 },
                 {
                   text: 'Expected Status',
